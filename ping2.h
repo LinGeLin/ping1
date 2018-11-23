@@ -63,7 +63,7 @@ void alarm_handler(int);	/*SIGALRM处理程序*/
 void int_handler(int);		/*SIGINT处理程序*/
 void set_sighandler();		/*设置信号处理程序*/
 void send_ping();		/*发送ping消息*/
-void recv_reply();		/*接收ping应答*/
+void recv_reply(int count);		/*接收ping应答*/
 u16 checksum(u8 *buf, int len); /*计算校验和*/
 int handle_pkt();		/*ICMP应答消息处理*/
 void get_statistics(int, int);	/*统计ping命令的检测结果*/
