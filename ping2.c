@@ -25,6 +25,7 @@ int main(int argc,char **argv)	/*argc表示隐形程序命令行中参数的数�
 {
     struct hostent *host; /*该结构体属于include<netdb.h>*/ 
     int on =1;
+    int count=4;
  
     if(argc<2){		/*判断是否输入了地址*/
     printf("Usage: %s hostname\n",argv[0]);
@@ -35,7 +36,25 @@ int main(int argc,char **argv)	/*argc表示隐形程序命令行中参数的数�
       perror("can not understand the host name"); 	/*理解不了输入的地址*/
       exit(1);
       }
- 
+    if(argc==4){
+            if(strcmp(argv[2],"-l"==0)){
+                datalen=atoi(argv[3]);
+            }
+            else if(strcmp(argv[2],"-n"==0)){
+                count=atoi(argv[3]);
+            }
+    }  
+    else if(argc==6){
+                if(strcmp(argv[2],"-l"==0)){
+                datalen=atoi(argv[3]);
+                count=atoi(argv[5]);
+            }
+            else if(strcmp(argv[2],"-n"==0)){
+                count=atoi(argv[3]);
+                datalen=atoi(argv[5]);
+            }
+    }  
+
       hostname=argv[1];/*取出地址名*/
  
       memset(&dest,0,sizeof dest);	/*将dest中前sizeof(dest)个字节替换为0并返回s,此处为初始化,给最大内存清零*/
@@ -50,20 +69,19 @@ int main(int argc,char **argv)	/*argc表示隐形程序命令行中参数的数�
  
        setsockopt(sockfd,IPPROTO_IP,IP_HDRINCL,&on,sizeof(on));  /*设置当前套接字选项特定属性值，sockfd套接字，IPPROTO_IP协议层为IP层，IP_HDRINCL套接字选项条目，套接字接收缓冲区指针，sizeof(on)缓冲区长度的长度*/
  
-setuid(getuid());/*getuid()函数返回一个调用程序的真实用户ID,setuid()是让普通用户可以以root用户的角色运行只有root帐号才能运行的程序或命令。*/
-pid=getpid(); /*getpid函数用来取得目前进程的进程识别码*/
+    setuid(getuid());/*getuid()函数返回一个调用程序的真实用户ID,setuid()是让普通用户可以以root用户的角色运行只有root帐号才能运行的程序或命令。*/
+    pid=getpid(); /*getpid函数用来取得目前进程的进程识别码*/
  
-set_sighandler();/*对信号处理*/
-printf("Ping %s(%s): %d bytes data in ICMP packets.\n",
-       argv[1],inet_ntoa(dest.sin_addr),datalen);
+    set_sighandler();/*对信号处理*/
+    printf("Ping %s(%s): %d bytes data in ICMP packets.\n",argv[1],inet_ntoa(dest.sin_addr),datalen);
  
-       if((setitimer(ITIMER_REAL,&val_alarm,NULL))==-1)	/*定时函数*/
-          bail("setitimer fails.");
+    if((setitimer(ITIMER_REAL,&val_alarm,NULL))==-1)	/*定时函数*/
+        bail("setitimer fails.");
  
  
-          recv_reply();/*接收ping应答*/
+    recv_reply(int count);/*接收ping应答*/
  
-          return 0;
+    return 0;
 }
 /*发送ping消息*/
 void send_ping(void)
@@ -101,7 +119,7 @@ void send_ping(void)
     sendto(sockfd,sendbuf,len,0,(struct sockaddr *)&dest,sizeof (dest)); /*经socket传送数据*/
 }
 /*接收程序发出的ping命令的应答*/
-void recv_reply()
+void recv_reply(int count)
 {
     int n,len;
     int errno;
@@ -109,7 +127,7 @@ void recv_reply()
     n=nrecv=0;
     len=sizeof(from);	/*发送ping应答消息的主机IP*/
  
-    while(nrecv<4){
+    while(nrecv<count){
       if((n=recvfrom(sockfd,recvbuf,sizeof recvbuf,0,(struct sockaddr *)&from,&len))<0){	/*经socket接收数据,如果正确接收返回接收到的字节数，失败返回0.*/
               if(errno==EINTR)	/*EINTR表示信号中断*/
               continue;
@@ -223,5 +241,4 @@ void int_handler(int sig)
 void alarm_handler(int signo)
 {
     send_ping();	/*发送ping消息*/
- 
 }
